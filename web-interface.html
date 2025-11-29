@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Bot Farm</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial;
+            padding: 15px;
+        }
+        .header {
+            background: #16213e;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #4ecca3;
+            margin-bottom: 15px;
+            border-radius: 10px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            background: #4ecca3;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .btn.stop { background: #e94560; }
+        .btn.bulk { background: #4e8acc; }
+        .btn.chat { background: #9c4ecc; }
+        .btn.all { background: #cc4e8a; }
+        .btn.survival { background: #4ecc5c; }
+        .btn.tpa { background: #ccb84e; }
+        .btn.tripwire { background: #4eccb8; }
+        .btn.send-all { background: #cc6b4e; }
+        .stats {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4ecca3;
+        }
+        .bot-list {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .bot-item {
+            background: #1a1a2e;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4ecca3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bot-status {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .status-online { color: #4ecca3; }
+        .status-offline { color: #e94560; }
+        .status-connecting { color: #ffcc00; }
+        .chat-section {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .chat-messages {
+            height: 150px;
+            overflow-y: auto;
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #4ecca3;
+            background: #1a1a2e;
+            color: white;
+        }
+        .chat-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .message {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .user-message { background: rgba(78, 204, 163, 0.3); }
+        .bot-message { background: rgba(78, 138, 204, 0.3); }
+        .system-message { background: rgba(255, 204, 0, 0.3); }
+        .server-message { background: rgba(233, 69, 96, 0.3); }
+        .bot-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .small-btn {
+            padding: 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .bulk-controls {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .bulk-controls input {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #4ecca3;
+            background: #1a1a2e;
+            color: white;
+            width: 80px;
+        }
+        .mass-actions {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .special-actions {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Minecraft Bot Farm - 50 Bots</h1>
+        <p>Enhanced Control Panel with TPA & Tripwire Drop</p>
+    </div>
+
+    <div class="bulk-controls">
+        <input type="number" id="bulkCount" value="10" min="1" max="50">
+        <button class="btn bulk" onclick="startBulkBots()">📦 Connect Bots</button>
+        <button class="btn" onclick="connectAllBots()"> 🚀 Connect All 50</button>
+        <button class="btn stop" onclick="stopAllBots()">🛑 Stop All</button>
+    </div>
+
+    <div class="mass-actions">
+        <button class="btn all" onclick="chatAllBots()">💬 Chat All Bots</button>
+        <button class="btn survival" onclick="survivalAllBots()">🎯 Survival All Bots</button>
+    </div>
+
+    <div class="special-actions">
+        <button class="btn tpa" onclick="tpaAllBots()"> 📞 TPA to WORST_HT4_</button>
+        <button class="btn tripwire" onclick="dropTripwireAllBots()">🎣 Drop Tripwire Hooks</button>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="startFirstBot()">🚀 Start First</button>
+        <button class="btn" onclick="sendNextBot()">➡️ Send Next</button>
+        <button class="btn chat" onclick="sendRandomChat()">🎲 Random Chat</button>
+        <button class="btn" onclick="refreshStatus()">🔄 Refresh</button>
+    </div>
+
+    <div class="stats">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+            <div>
+                <div class="stat-number" id="onlineCount">0</div>
+                <div>Online</div>
+            </div>
+            <div>
+                <div class="stat-number" id="connectingCount">0</div>
+                <div>Connecting</div>
+            </div>
+            <div>
+                <div class="stat-number" id="offlineCount">50</div>
+                <div>Offline</div>
+            </div>
+            <div>
+                <div class="stat-number">50</div>
+                <div>Total</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bot-list" id="botList">
+        <!-- Bot list will be populated by JavaScript -->
+    </div>
+
+    <div class="chat-section">
+        <h3>💬 Bot Chat</h3>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message system-message">Connecting to bot server...</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Type message for all bots..." onkeypress="handleChatKeypress(event)">
+        </div>
+        <div class="chat-buttons">
+            <button class="btn chat" onclick="sendChatMessage()">📤 Send to Selected</button>
+            <button class="btn send-all" onclick="sendToAllBots()">📢 Send to ALL Bots</button>
+        </div>
+        <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #4ecca3;">
+            Selected Bot: <span id="selectedBotDisplay">None</span>
+        </div>
+    </div>
+
+    <script>
+        const accounts = ["kmyq20700", "nzhj60086", "fspz88256", "etiew29872", "lerey07058", "dpyww21385", "nwlic69698", "kfdh76242", "keme41973", "gtomu36792", "gjth41639", "layt14206", "yflju08739", "gisz21394", "numv88981", "fugs99967", "jbjfd54500", "rkli78660", "mmp08961", "tyed67776", "anv70605", "jizvh44817", "blur78987", "slsx80865", "vnt06756", "lvlv20278", "lpghg52113", "ktjb75635", "fqb96501", "imfdl63351", "gedmh93153", "bgub63864", "tdg09805", "higwp33380", "tpdr45264", "dkwc51820", "ixf05608", "xbari85549", "tzr37381", "wtvg67482", "tml18129", "zebsx01272", "xbw17141", "ahj11848", "vhykv06965", "pqym34099", "unk33373", "bnghq49924", "qdcpm41716", "xycg80877"];
+
+        let ws = null;
+        let selectedBot = null;
+        const botStatus = {};
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+
+        function init() {
+            connectWebSocket();
+            initializeBots();
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = protocol + '//' + window.location.host;
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function() {
+                    addChatMessage('System', '✅ Connected to bot server');
+                    reconnectAttempts = 0;
+                    sendCommand('get_bot_statuses');
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (error) {
+                        console.error('Error parsing message:', error);
+                    }
+                };
+
+                ws.onclose = function() {
+                    addChatMessage('System', '❌ Disconnected - Retrying...');
+                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        setTimeout(connectWebSocket, 3000);
+                        reconnectAttempts++;
+                    }
+                };
+
+                ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (error) {
+                console.error('Failed to create WebSocket:', error);
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'bot_statuses':
+                    updateBotStatuses(data.bots);
+                    break;
+                case 'status':
+                    updateBotStatus(data.username, data.status);
+                    break;
+                case 'message':
+                    addChatMessage(data.username, data.message);
+                    break;
+                case 'joined':
+                    addChatMessage('System', '🚀 ' + data.username + ' joined server');
+                    break;
+                case 'system':
+                    addChatMessage('System', data.message);
+                    break;
+                case 'error':
+                    addChatMessage('Error', data.username + ': ' + data.message);
+                    break;
+                case 'login':
+                    addChatMessage('System', data.username + ' sent login');
+                    break;
+                case 'chat_sent':
+                    addChatMessage('You to ' + data.username, data.message);
+                    break;
+            }
+        }
+
+        function initializeBots() {
+            accounts.forEach(username => {
+                botStatus[username] = { status: 'offline', currentServer: 'unknown' };
+            });
+            renderBotList();
+            updateSelectedBotDisplay();
+        }
+
+        function updateBotStatuses(bots) {
+            bots.forEach(bot => {
+                botStatus[bot.username] = bot;
+            });
+            renderBotList();
+            updateStats();
+        }
+
+        function updateBotStatus(username, status) {
+            if (botStatus[username]) {
+                botStatus[username].status = status;
+                renderBotList();
+                updateStats();
+            }
+        }
+
+        function renderBotList() {
+            const botList = document.getElementById('botList');
+            botList.innerHTML = '';
+
+            accounts.forEach(username => {
+                const bot = botStatus[username] || { status: 'offline', currentServer: 'unknown' };
+                const botItem = document.createElement('div');
+                botItem.className = 'bot-item';
+                botItem.innerHTML = '<div style="flex: 1;"><div style="font-weight: bold;">' + username + '</div><div class="bot-status status-' + bot.status + '">● ' + bot.status + ' • ' + bot.currentServer + '</div></div><div class="bot-actions"><button class="small-btn" style="background: #4ecca3;" onclick="connectBot(\'' + username + '\')">▶️</button><button class="small-btn" style="background: #e94560;" onclick="disconnectBot(\'' + username + '\')">⏹️</button><button class="small-btn" style="background: #4e8acc;" onclick="selectBot(\'' + username + '\')">💬</button></div>';
+                botList.appendChild(botItem);
+            });
+        }
+
+        function updateStats() {
+            const online = Object.values(botStatus).filter(b => b.status === 'online').length;
+            const connecting = Object.values(botStatus).filter(b => b.status === 'connecting').length;
+            const offline = Object.values(botStatus).filter(b => b.status === 'offline').length;
+
+            document.getElementById('onlineCount').textContent = online;
+            document.getElementById('connectingCount').textContent = connecting;
+            document.getElementById('offlineCount').textContent = offline;
+        }
+
+        function updateSelectedBotDisplay() {
+            document.getElementById('selectedBotDisplay').textContent = selectedBot || 'None';
+        }
+
+        function startFirstBot() {
+            if (accounts.length > 0) connectBot(accounts[0]);
+        }
+
+        function stopAllBots() {
+            accounts.forEach(username => disconnectBot(username));
+        }
+
+        function startBulkBots() {
+            const count = document.getElementById('bulkCount').value;
+            sendCommand('bulk_connect', {
+                count: count,
+                server: 'play.stealfun.net',
+                port: 25565,
+                password: 'password'
+            });
+        }
+
+        function connectAllBots() {
+            sendCommand('bulk_connect', {
+                count: '50',
+                server: 'play.stealfun.net',
+                port: 25565,
+                password: 'password'
+            });
+        }
+
+        function chatAllBots() {
+            const message = prompt('Enter message to send to all online bots:');
+            if (message) {
+                sendCommand('chat_all', { message: message });
+            }
+        }
+
+        function sendToAllBots() {
+            const message = document.getElementById('chatInput').value.trim();
+            if (message) {
+                sendCommand('chat_all', { message: message });
+                document.getElementById('chatInput').value = '';
+                addChatMessage('System', `Sent "${message}" to ALL online bots`);
+            } else {
+                addChatMessage('System', 'Please enter a message first');
+            }
+        }
+
+        function tpaAllBots() {
+            if (confirm('Send TPA request to WORST_HT4_ from all online bots?')) {
+                sendCommand('tpa_all');
+            }
+        }
+
+        function dropTripwireAllBots() {
+            if (confirm('Make all online bots drop tripwire hooks 2-3 blocks ahead?')) {
+                sendCommand('drop_tripwire_all');
+            }
+        }
+
+        function survivalAllBots() {
+            if (confirm('Send all online bots to survival server?')) {
+                sendCommand('survival_all');
+            }
+        }
+
+        function sendNextBot() {
+            const offlineBot = accounts.find(username => botStatus[username].status === 'offline');
+            if (offlineBot) connectBot(offlineBot);
+        }
+
+        function sendRandomChat() {
+            if (selectedBot) {
+                const messages = ['Hello!', 'How is everyone?', 'Nice server!', 'What\'s up?', 'Good game!'];
+                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                sendCommand('chat', { username: selectedBot, message: randomMessage });
+            } else {
+                addChatMessage('System', 'Please select a bot first');
+            }
+        }
+
+        function refreshStatus() {
+            sendCommand('get_bot_statuses');
+        }
+
+        function connectBot(username) {
+            sendCommand('connect', {
+                username: username,
+                server: 'play.stealfun.net',
+                port: 25565,
+                password: 'password'
+            });
+        }
+
+        function disconnectBot(username) {
+            sendCommand('disconnect', { username: username });
+        }
+
+        function selectBot(botName) {
+            selectedBot = botName;
+            addChatMessage('System', 'Selected ' + botName + ' for individual chatting');
+            updateSelectedBotDisplay();
+            document.getElementById('chatInput').focus();
+        }
+
+        function sendChatMessage() {
+            const message = document.getElementById('chatInput').value.trim();
+            if (message && selectedBot) {
+                sendCommand('chat', { username: selectedBot, message: message });
+                document.getElementById('chatInput').value = '';
+            } else if (!selectedBot) {
+                addChatMessage('System', 'Please select a bot first for individual chat');
+            } else {
+                addChatMessage('System', 'Please enter a message first');
+            }
+        }
+
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                // If Ctrl+Enter is pressed, send to all bots
+                if (event.ctrlKey || event.metaKey) {
+                    sendToAllBots();
+                } else {
+                    sendChatMessage();
+                }
+            }
+        }
+
+        function sendCommand(command, data) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                try {
+                    ws.send(JSON.stringify({ command: command, ...data }));
+                } catch (error) {
+                    addChatMessage('Error', 'Failed to send command');
+                }
+            } else {
+                addChatMessage('Error', 'Not connected to server - reconnecting...');
+                connectWebSocket();
+            }
+        }
+
+        function addChatMessage(sender, text) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            let messageClass = 'message ';
+            if (sender.includes('You')) messageClass += 'user-message';
+            else if (sender.includes('Error')) messageClass += 'server-message';
+            else if (sender === 'System') messageClass += 'system-message';
+            else messageClass += 'bot-message';
+
+            messageDiv.className = messageClass;
+            messageDiv.textContent = '[' + sender + '] ' + text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

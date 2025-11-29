@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "heroku/buildpacks:20",
+    "buildCommand": "npm install"
+  },
+  "deploy": {
+    "startCommand": "node bit-server.js"
+  }
+}

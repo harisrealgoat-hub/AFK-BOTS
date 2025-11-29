@@ -1,0 +1,15 @@
+{
+  "name": "afk-bot-server",
+  "version": "1.0.0",
+  "main": "bit-server.js",
+  "scripts": {
+    "start": "node bit-server.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.3.0",
+    "ws": "^8.13.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
